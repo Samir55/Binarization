@@ -1,18 +1,15 @@
-//
-// Created by ASamir on 12/16/17.
-//
-
 #ifndef PRE_PROCESSING_PREPROCESSOR_H
 #define PRE_PROCESSING_PREPROCESSOR_H
 
 #include "../Pre_Processing.h"
 
+#define IMGTXTENH_PATH "../src/imgtxtenh/imgtxtenh"
 #define OUTPUT_PATH "../output/"
 #define IMAGE_GREY "grey.jpg"
 #define IMAGE_PAPER_ONLY "paper.jpg"
 #define IMAGE_WIENER "wiener.ppm"
-#define IMAGE_SAUVOLA "sauvola.jpg"
 #define IMAGE_INTERPOLATED "interpolated.jpg"
+#define IMAGE_SAUVOLA "paper.jpg" // Final Output
 
 using namespace std;
 using namespace cv;
@@ -49,30 +46,33 @@ public:
 
 private:
     string image_path;
-    ///<
+    ///< Image path
     string output_path;
-    ///<
+    ///< Output image path
     Mat image_original;
-    ///<
+    ///< Color image
     Mat image_original_transformed;
-    ///<
+    ///< Color image containing the paper only without background
     Mat1b image_grey; // Is(x, y)
-    ///<
+    ///< Grey scale image
     Mat1b image_wiener; // I(x, y)
-    ///<
+    ///< Grey scale image after applying Wiener filter
     Mat1b image_sauvola; // S(x, y)
-    ///<
+    ///< Grey scale image after applying Sauvola adaptive thresholding
     Mat1b image_interpolated; // B(x, y)
-    ///<
+    ///< Grey scale image representing the estimated background of the text
     Mat1b image_final_threshold; // T(x`,y`)
+    ///< Grey scale image after applying final threshold to image_interpolated
+//    float average_distance;
     ///<
-    float average_distance;
 
+    /// Read the image
     void read_image() {
         image_original = imread(image_path);
         cvtColor(image_original, image_grey, COLOR_RGB2GRAY);
     }
 
+    /// Get the paper only without background in the original image
     void get_paper_text() {
         Mat image_smoothed, image_blurred, image_edges, image_paper_text;
 
@@ -113,7 +113,6 @@ private:
         // Get the original 4 corners
         epsilon = 0.1 * arcLength(contours[max_index], true);
         approxPolyDP(contours[max_index], original_corners, epsilon, true);
-        cout << original_corners.size();
 
         // Return if the number of corners is not 4
         if (original_corners.size() != 4) {
@@ -164,49 +163,58 @@ private:
 
     }
 
+    /// Apply Wiener filter of window size 3x3
     void apply_wiener_filter() {
         // Call to WienerFilter
         WienerFilter(image_grey, image_wiener, Size(5, 5));
+
         // Save as PPM to be used by Doxa library that doesn't support OpenCV
         imwrite(string(OUTPUT_PATH) + IMAGE_WIENER, image_wiener);
     }
 
+    /// Apply Sauvola adaptive thresholding using k = 0.2
     void apply_sauvola_binarization() {
 
         // Apply sauvola binarization.
-        system("../src/imgtxtenh/build/imgtxtenh -k 0.2 -p ../output/wiener.ppm ../output/sauvola.jpg");
+        string command = string(IMGTXTENH_PATH) + " -k 0.2 -p " + string(OUTPUT_PATH)
+                         + string(IMAGE_WIENER) + " " + string(OUTPUT_PATH)
+                         + string(IMAGE_SAUVOLA);
+        system(command.c_str());
 
         image_sauvola = imread(string(OUTPUT_PATH) + IMAGE_SAUVOLA, CV_LOAD_IMAGE_GRAYSCALE);
     }
 
-    void background_surface_estimation(int dx = 15, int dy = 15) { // The window size is used from another paper [17].
+
+//    void background_surface_estimation(int dx = 15, int dy = 15) { // The window size is used from another paper [17].
 //        image_interpolated = image_grey.clone();
-        int rows = image_sauvola.rows, cols = image_sauvola.cols;
-
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                if (image_sauvola.at<uchar>(i, j) != 0) {
-
-                    float n = 0, d = 0;
-                    for (int a = max(0, i - dx); a < (i + dx); ++a) {
-                        for (int b = max(0, j - dy); b < (j + dy); ++b) {
+//        int rows = image_sauvola.rows, cols = image_sauvola.cols;
+//
+//        for (int i = 0; i < rows; i++) {
+//            for (int j = 0; j < cols; j++) {
+//                if (image_sauvola.at<uchar>(i, j) != 0) {
+//
+//                    float n = 0, d = 0;
+//                    for (int a = max(0, i - dx); a < (i + dx); ++a) {
+//                        for (int b = max(0, j - dy); b < (j + dy); ++b) {
 //                            n += (image_grey.at<uchar>(a, b) * (1 - image_sauvola.at<uchar>(a, b)));
-                            d += (1 - image_sauvola.at<uchar>(a, b));
-                        }
-                    }
+//                            d += (1 - image_sauvola.at<uchar>(a, b));
+//                        }
+//                    }
+//
+//                    image_interpolated.at<uchar>(i, j) = n / d;
+//                }
+//            }
+//        }
+//
+//        #if DEBUG
+//        // Save the interpolated image.
+//        imwrite(string(OUTPUT_PATH) + IMAGE_INTERPOLATED, image_interpolated);
+//        #endif
+//    }
 
-                    image_interpolated.at<uchar>(i, j) = n / d;
-                }
-            }
-        }
-
-        // Save the interpolated image.
-        imwrite(string(OUTPUT_PATH) + IMAGE_INTERPOLATED, image_interpolated);
-    }
-
-    void calculate_average_distance() {
-        average_distance = 0;
-        int rows = image_interpolated.rows, cols = image_interpolated.cols;
+//    void calculate_average_distance() {
+//        average_distance = 0;
+//        int rows = image_interpolated.rows, cols = image_interpolated.cols;
 //        float n = 0, d = 1;
 //        for (int i = 0; i < rows; i++) {
 //            for (int j = 0; j < cols; j++) {
@@ -215,17 +223,15 @@ private:
 //            }
 //        }
 //        average_distance = n / d;
-    }
+//    }
 
     // Helper functions
-    // comparison function object
+    /// Used in sorting contours
     static bool compareContourAreas(vector<Point> contour1, vector<Point> contour2) {
         double i = fabs(contourArea(Mat(contour1)));
         double j = fabs(contourArea(Mat(contour2)));
         return (i < j);
     }
-
 };
-
 
 #endif //PRE_PROCESSING_PREPROCESSOR_H

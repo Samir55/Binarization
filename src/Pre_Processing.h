@@ -1,7 +1,3 @@
-//
-// Created by ASamir on 12/16/17.
-//
-
 #ifndef PRE_PROCESSING_PRE_PROCESSING_H
 #define PRE_PROCESSING_PRE_PROCESSING_H
 #include <iostream>
