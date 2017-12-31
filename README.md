@@ -10,3 +10,21 @@ The steps for Adaptive binarization are:
 * Background surface estimation. (TODO)
 * Final thresholding. (TODO)
 * Upsampling. (TODO)
+
+# Dependencies
+* ImageMagick: 6.8 or newer **but less than 7.0**.
+* OpenCV: 3.0 or newer.
+
+# Build
+```Console
+mkdir build
+cd build
+cmake ..
+make
+```
+# Usage
+As it's a working in progress project, currently modify the image path in main.cpp then build and run
+```Console
+./pre_processing
+```
+the output will be in the 'repository_directory/output' under the name 'paper.jpg'. you can also see the output of the weiner filter under the name 'weiner.ppm' in the same folder.
