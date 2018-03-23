@@ -12,10 +12,10 @@ add_custom_target(
         imgtxtenh ALL
 )
 
-MESSAGE ("Building dependency: imgtxtenh")
+MESSAGE ("Including dependency: imgtxtenh")
 
 add_custom_command (TARGET imgtxtenh
-        COMMAND cmake ${CMAKE_CURRENT_SOURCE_DIR}/src/imgtxtenh/ && make
+        COMMAND cmake ${CMAKE_CURRENT_SOURCE_DIR}/src/imgtxtenh/ && make | cat
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/imgtxtenh/)
 
 
