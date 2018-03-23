@@ -12,11 +12,14 @@ The steps for Adaptive binarization are:
 * Upsampling. (TODO)
 
 # Dependencies
-* ImageMagick: 6.8 or newer **but less than 7.0**.
+* ImageMagick: 6.7.7 or newer **but less than 7.0**.
 * OpenCV: 3.0 or newer.
 
 # Build
 ```Console
+git clone https://github.com/Samir55/Binarization.git
+git submodule init
+git submodule update
 mkdir build
 cd build
 cmake ..
